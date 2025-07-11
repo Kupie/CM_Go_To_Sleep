@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
 using UnityEngine;
@@ -14,28 +14,30 @@ namespace KB_Go_To_Sleep
     public static class FloatMenuMakerMap_Patches
     {
         [HarmonyPatch(typeof(FloatMenuMakerMap))]
-        [HarmonyPatch("AddHumanlikeOrders", MethodType.Normal)]
+        [HarmonyPatch("GetProviderOptions", MethodType.Normal)]
         public static class FloatMenuMakerMap_AddHumanlikeOrders
         {
             [HarmonyPostfix]
-            public static void Postfix(Vector3 clickPos, Pawn pawn, List<FloatMenuOption> opts)
+            public static void Postfix(FloatMenuContext context, List<FloatMenuOption> options)
             {
+                Pawn pawn = context.FirstSelectedPawn;
                 if (pawn.needs == null || pawn.needs.rest == null)
                     return;
 
+                Vector3 clickPos = context.clickPosition;
                 foreach (LocalTargetInfo bed in GenUI.TargetsAt(clickPos, ForSleeping(pawn), thingsOnly: true))
                 {
                     if (pawn.needs.rest.CurLevel > FloatMenuMakerMap_AddHumanlikeOrders.FallAsleepMaxLevel(pawn))
                     {
-                        opts.Add(new FloatMenuOption("KB_Go_To_Sleep_Cannot_Sleep".Translate() + ": " + "KB_Go_To_Sleep_Not_Tired".Translate().CapitalizeFirst(), null));
+                        options.Add(new FloatMenuOption("KB_Go_To_Sleep_Cannot_Sleep".Translate() + ": " + "KB_Go_To_Sleep_Not_Tired".Translate().CapitalizeFirst(), null));
                     }
                     else if (!pawn.CanReach(bed, PathEndMode.OnCell, Danger.Deadly))
                     {
-                        opts.Add(new FloatMenuOption("KB_Go_To_Sleep_Cannot_Sleep".Translate() + ": " + "NoPath".Translate().CapitalizeFirst(), null));
+                        options.Add(new FloatMenuOption("KB_Go_To_Sleep_Cannot_Sleep".Translate() + ": " + "NoPath".Translate().CapitalizeFirst(), null));
                     }
                     else
                     {
-                        opts.Add(FloatMenuUtility.DecoratePrioritizedTask(new FloatMenuOption("KB_Go_To_Sleep_GoToSleep".Translate(), delegate
+                        options.Add(FloatMenuUtility.DecoratePrioritizedTask(new FloatMenuOption("KB_Go_To_Sleep_GoToSleep".Translate(), delegate
                         {
                             Job job = JobMaker.MakeJob(JobDefOf.LayDown, bed.Thing);
 
